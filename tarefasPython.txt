@@ -8,11 +8,11 @@ Python
 
 **Além dos arquivos py, deve ter uma arquivo txt com o nome e rm de todos os integrantes da Equipe e um documento pdf descrevendo as funcionalidades da solução
 
-Criar menu principal com opções.
+Criar menu principal com opções. ✅
 
-Fazer cadastro de usuário (nome, e-mail, senha).
+Fazer cadastro de usuário (nome, e-mail, senha). ✅
 
-Implementar login de usuário.
+Implementar login de usuário. ✅
 
 Criar evento (tipo de jogo, número de jogadores por time).
 
@@ -22,9 +22,9 @@ Garantir limite de jogadores por time.
 
 Mostrar relatórios (usuários, eventos, times, partidas). (talvez)
 
-Manter o menu em repetição até escolher “sair”.
+Manter o menu em repetição até escolher “sair”. 
 
-Deixar interface clara e amigável (textos bem explicados).
+Deixar interface clara e amigável (textos bem explicados). 
 
 Organizar em funções separadas.
 
