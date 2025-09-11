@@ -4,6 +4,37 @@ import re
 usuarios: list = []
 usuario_logado = None
 
+# === Estruturas para eventos (necessárias para o menu de eventos) ===
+eventos: list[dict] = []   # cada evento: {"id": int, "tipo": str, "jogadores_por_time": int, "times": list[int]}
+
+_next_ids = {"evento": 1, "time": 1}
+def _novo_id(kind: str) -> int:
+    _next_ids[kind] += 1
+    return _next_ids[kind] - 1
+
+# === Helpers de validação ===
+EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+
+def le_inteiro_positivo(msg: str) -> int:
+    while True:
+        s = input(msg).strip()
+        if not s or not s.isdigit():
+            print("Informe um número inteiro positivo.")
+            continue
+        n = int(s)
+        if n <= 0:
+            print("O número deve ser maior que zero.")
+            continue
+        return n
+
+def aceita_termos() -> None:
+    while True:
+        v = input("Você aceita os termos de uso? (s/n) ").strip().lower()
+        if v == "s":
+            return
+        print("Você precisa aceitar os termos de uso para continuar (responda 's').")
+
+
 def mostra_menu() -> None:
     """
     Essa função exibe um menu com as funcionalidades do sistema
@@ -21,17 +52,23 @@ def mostra_menu() -> None:
     print("[0] Sair do Programa")
     print("---------------------------------")
    
-def digita_email() -> str:
+def digita_email(checagem_unicidade: bool = False) -> str:
     """
-    Essa função solicita que o usuário digite um e-mail,
-    valida esse e-mail e retorna ele em string
+    Lê um e-mail válido (regex).
+    Se checagem_unicidade=True, impede e-mails já cadastrados.
     """
-    email: str = input("Digite o seu e-mail: ")
+    while True:
+        email: str = input("Digite o seu e-mail: ").strip()
+        if not EMAIL_REGEX.match(email):
+            print("E-mail inválido. Exemplo válido: nome@dominio.com")
+            continue
 
-    while "@" not in email or not email.endswith(".com"):
-        email: str = input("E-mail inválido. Digite o e-mail novamente:exemplo@email.com ")
+        if checagem_unicidade and any(u["email"].lower() == email.lower() for u in usuarios):
+            print("E-mail já cadastrado. Informe outro.")
+            continue
 
-    return email
+        return email
+
 
 
 def digita_senha() -> str:
@@ -63,11 +100,12 @@ def cadastra_usuario() -> None:
     while len(nome.split(" ")) < 2:
         nome: str = input("O nome deve ter pelo menos duas palavras. Digite o nome novamente: ").strip()
         
-    email: str = digita_email()
-
-    for usuario in usuarios:
-        while usuario[1] == email:
-            email = input("E-mail já cadastrado. Digite o e-mail novamente: ")
+    while True:
+        email: str = digita_email()
+        if any(u["email"].lower() == email.lower() for u in usuarios):
+            print("❌ E-mail já cadastrado. Digite outro.")
+            continue
+        break
 
     senha: str = digita_senha()
 
@@ -84,26 +122,26 @@ def cadastra_usuario() -> None:
 
 def fazer_login() -> None:
     """
-    Essa função solicita o e-mail e senha do usuário e,
-    caso corresponderem com algum usuário na lista,
-    armazena esse usuário na variável do usuario_logado
+    Autentica usando dicts {nome, email, senha}.
+    Compara e-mail de forma case-insensitive.
     """
     global usuario_logado
 
-    if not usuario_logado:
-        email = digita_email()
-        senha = digita_senha()
-
-        for usuario in usuarios:
-            if usuario[1] == email and usuario[2] == senha:
-                usuario_logado = usuario
-                print(f"Login realizado com sucesso! Bem-vindo, {usuario[0]}.\n")
-                return
-
-        print("E-mail ou senha incorretos.\n")
+    if usuario_logado:
+        print("Você já está logado.\n")
         return
 
-    print("Você já está logado.\n")
+    email = input("E-mail: ").strip()
+    senha = input("Senha: ").strip()
+
+    for u in usuarios:
+        if u.get("email", "").lower() == email.lower() and u.get("senha", "") == senha:
+            usuario_logado = u
+            print(f" Login realizado com sucesso! Bem-vindo, {u.get('nome','usuário')}.\n")
+            return
+
+    print(" E-mail ou senha incorretos.\n")
+
 
 def sair_da_conta() -> None:
     """
@@ -152,7 +190,7 @@ def criar_evento() -> None:
     Cria um evento com: tipo de jogo e nº de jogadores por time.
     """
     print("\n--- Criar Evento ---")
-    tipo = input("Tipo de jogo (ex.: Grupo idependente, Grupo patrocinado, Jogador avulso): ").strip()
+    tipo = input("Tipo de jogo (ex.: Amistoso, Oitavas, quartas de final, semi-final, final): ").strip()
     if not tipo:
         print(" Tipo de jogo não pode ser vazio.")
         return
