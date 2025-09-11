@@ -129,6 +129,65 @@ def ver_perfil() -> None:
     else:
         print("Você precisa estar logado para ver o perfil.\n")
 
+def menu_eventos_times() -> None:
+    "Essa função é responsavel pela gestao do menu de criar eventos"
+    while True:
+        print("\n--- Eventos e Times ---")
+        print("[1] Criar evento")
+        print("[2] Listar eventos")
+        print("[0] Voltar")
+        op = input("Escolha: ").strip()
+
+        if op == "1":
+            criar_evento()
+        elif op == "2":
+            listar_eventos()
+        elif op == "0":
+            return
+        else:
+            print("Opção inválida.")
+
+def criar_evento() -> None:
+    """
+    Cria um evento com: tipo de jogo e nº de jogadores por time.
+    """
+    print("\n--- Criar Evento ---")
+    tipo = input("Tipo de jogo (ex.: Grupo idependente, Grupo patrocinado, Jogador avulso): ").strip()
+    if not tipo:
+        print(" Tipo de jogo não pode ser vazio.")
+        return
+
+    while True:
+        n = input("Nº de jogadores por time (ex.: 5, 7, 11): ").strip()
+        if not n.isdigit() or int(n) <= 0:
+            print("Informe um número.")
+            continue
+        jogadores_por_time = int(n)
+        break
+
+    id = _novo_id("evento")
+    eventos.append({
+        "id": id,
+        "tipo": tipo,
+        "jogadores_por_time": jogadores_por_time,
+        "times": []
+    })
+    print(f"✅ Evento #{id} criado: {tipo} | {jogadores_por_time} jogadores/time")
+
+
+def listar_eventos() -> None:
+    """
+    Lista eventos cadastrados para conferência.
+    """
+    print("\n--- Eventos Cadastrados ---")
+    if not eventos:
+        print("(sem eventos)")
+        return
+    for ev in eventos:
+        print(f"#{ev['id']} – {ev['tipo']} | {ev['jogadores_por_time']} por time | Times: {len(ev['times'])}")
+
+
+
 def mostra_menu() -> None:
     print("---------------------------------")
     print("| BEM VINDO(A) AO PASSA A BOLA! |")
@@ -163,6 +222,8 @@ while True:
     elif numero_menu == 4:
         sair_da_conta()
     elif numero_menu == 5:
+        menu_eventos_times()    
+    elif numero_menu == 6:
         print("Módulo de eventos ainda não implementado.\n")
     elif numero_menu == 0:
         print("Encerrando... até logo!")
