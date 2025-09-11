@@ -18,6 +18,7 @@ def mostra_menu() -> None:
     print("[3] Ver Perfil")
     print("[4] Sair da Conta")
     print("[5] Consultar Eventos")
+    print("[0] Sair do Programa")
     print("---------------------------------")
    
 def digita_email() -> str:
@@ -28,7 +29,7 @@ def digita_email() -> str:
     email: str = input("Digite o seu e-mail: ")
 
     while "@" not in email or not email.endswith(".com"):
-        email: str = input("E-mail inválido. Digite o e-mail novamente: ")
+        email: str = input("E-mail inválido. Digite o e-mail novamente:exemplo@email.com ")
 
     return email
 
@@ -57,7 +58,7 @@ def cadastra_usuario() -> None:
     valida esse nome, chama as funções email e senha,
     e adiciona o usuário à lista de usuários.
     """
-    nome: str = input("Digite o seu nome: ").strip()
+    nome: str = input("Digite o seu nome e sobrenome: ").strip()
     
     while len(nome.split(" ")) < 2:
         nome: str = input("O nome deve ter pelo menos duas palavras. Digite o nome novamente: ").strip()
@@ -71,11 +72,12 @@ def cadastra_usuario() -> None:
     senha: str = digita_senha()
 
     termos_uso: str = input("Você aceita os termos de uso? (s/n) ")
+   
 
     while termos_uso.lower() != "s":
         termos_uso: str = input("Você precisa aceitar os termos de uso para continuar (s): ")
 
-    usuarios.append([nome, email, senha])
+    usuarios.append({"nome":nome, "email": email, "senha":senha})
     print("Usuário cadastrado com sucesso!")    
 
 
@@ -123,22 +125,47 @@ def ver_perfil() -> None:
         print("\n------ Perfil ------")
         print(f"Nome: {usuario_logado[0]}")
         print(f"E-mail: {usuario_logado[1]}")
-        print(f"Senha: {usuario_logado[2]}")
+        
     else:
         print("Você precisa estar logado para ver o perfil.\n")
 
+def mostra_menu() -> None:
+    print("---------------------------------")
+    print("| BEM VINDO(A) AO PASSA A BOLA! |")
+    print("| O que você deseja acessar?    |")
+    print("---------------------------------")
+    print("[1] Cadastrar Usuário")
+    print("[2] Fazer Login")
+    print("[3] Ver Perfil")
+    print("[4] Sair da Conta")
+    print("[5] Consultar Eventos")
+    print("[0] Sair do Programa")
+    print("---------------------------------")
+
+def le_opcao_menu() -> int:
+    while True:
+        op = input("Digite a ação que deseja realizar: ").strip()
+        if not op.isdigit():
+            print("Informe um número válido.")
+            continue
+        return int(op)
 
 while True:
     mostra_menu()
-    numero_menu = int(input("Digite a ação que deseja realizar: "))
+    numero_menu = le_opcao_menu()
 
     if numero_menu == 1:
         cadastra_usuario()
     elif numero_menu == 2:
         fazer_login()
     elif numero_menu == 3:
-        ver_perfil() 
+        ver_perfil()
     elif numero_menu == 4:
-        sair_da_conta()       
-               
-
+        sair_da_conta()
+    elif numero_menu == 5:
+        print("Módulo de eventos ainda não implementado.\n")
+    elif numero_menu == 0:
+        print("Encerrando... até logo!")
+        break
+    else:
+        print("Opção inválida.\n")
