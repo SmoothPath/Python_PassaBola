@@ -1,11 +1,11 @@
 #Importando bibliotecas
 import re
 
-usuarios: list = []
+usuarios: list[dict] = []
 usuario_logado = None
 
 # === Estruturas para eventos (necessárias para o menu de eventos) ===
-eventos: list[dict] = []   # cada evento: {"id": int, "tipo": str, "jogadores_por_time": int, "times": list[int]}
+eventos: list[dict] = []   # cada evento: {"id": int, "tipo": str, "jogadoras_por_time": int, "times": list[int]}
 
 _next_ids = {"evento": 1, "time": 1}
 def _novo_id(kind: str) -> int:
@@ -76,7 +76,7 @@ def digita_senha() -> str:
     Essa função solicita que o usuário digite uma senha,
     valida ela, e retorna ela em string
     """
-    senha: str = input("Digite a sua senha: ")
+    senha: str = input("Digite a sua senha: ").strip
 
     while not (len(senha) >= 8 and
            re.search(r"[A-Z]", senha) and
@@ -99,21 +99,12 @@ def cadastra_usuario() -> None:
     
     while len(nome.split(" ")) < 2:
         nome: str = input("O nome deve ter pelo menos duas palavras. Digite o nome novamente: ").strip()
-        
-    while True:
-        email: str = digita_email()
-        if any(u["email"].lower() == email.lower() for u in usuarios):
-            print("❌ E-mail já cadastrado. Digite outro.")
-            continue
-        break
+   
+    email: str = digita_email(checagem_unicidade=True)
 
     senha: str = digita_senha()
 
-    termos_uso: str = input("Você aceita os termos de uso? (s/n) ")
-   
-
-    while termos_uso.lower() != "s":
-        termos_uso: str = input("Você precisa aceitar os termos de uso para continuar (s): ")
+    aceita_termos()
 
     usuarios.append({"nome":nome, "email": email, "senha":senha})
     print("Usuário cadastrado com sucesso!")    
@@ -187,7 +178,7 @@ def menu_eventos_times() -> None:
 
 def criar_evento() -> None:
     """
-    Cria um evento com: tipo de jogo e nº de jogadores por time.
+    Cria um evento com: tipo de jogo e nº de jogadoras por time.
     """
     print("\n--- Criar Evento ---")
     tipo = input("Tipo de jogo (ex.: Amistoso, Oitavas, quartas de final, semi-final, final): ").strip()
@@ -195,22 +186,17 @@ def criar_evento() -> None:
         print(" Tipo de jogo não pode ser vazio.")
         return
 
-    while True:
-        n = input("Nº de jogadores por time (ex.: 5, 7, 11): ").strip()
-        if not n.isdigit() or int(n) <= 0:
-            print("Informe um número.")
-            continue
-        jogadores_por_time = int(n)
-        break
+    jogadoras_por_time = le_inteiro_positivo("Nº de jogadoras por time (ex.: 5, 7, 11): ")
 
-    id = _novo_id("evento")
+
+    evento_id = _novo_id("evento")
     eventos.append({
-        "id": id,
+        "id": evento_id,
         "tipo": tipo,
-        "jogadores_por_time": jogadores_por_time,
+        "jogadoras_por_time": jogadoras_por_time,
         "times": []
     })
-    print(f"✅ Evento #{id} criado: {tipo} | {jogadores_por_time} jogadores/time")
+    print(f"✅ Evento #{id} criado: {tipo} | {jogadoras_por_time} jogadoras/time")
 
 
 def listar_eventos() -> None:
@@ -222,7 +208,7 @@ def listar_eventos() -> None:
         print("(sem eventos)")
         return
     for ev in eventos:
-        print(f"#{ev['id']} – {ev['tipo']} | {ev['jogadores_por_time']} por time | Times: {len(ev['times'])}")
+        print(f"#{ev['id']} – {ev['tipo']} | {ev['jogadoras_por_time']} por time | Times: {len(ev['times'])}")
 
 
 
