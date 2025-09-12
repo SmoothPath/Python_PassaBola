@@ -161,8 +161,8 @@ def ver_perfil() -> None:
     """
     if usuario_logado:
         print("\n------ Perfil ------")
-        print(f"Nome: {usuario_logado[0]}")
-        print(f"E-mail: {usuario_logado[1]}")
+        print(f"Nome: {usuario_logado.get('nome')}")
+        print(f"E-mail: {usuario_logado.get('email')}")
         
     else:
         print("Você precisa estar logado para ver o perfil.\n")
@@ -225,19 +225,6 @@ def listar_eventos() -> None:
         print(f"#{ev['id']} – {ev['tipo']} | {ev['jogadores_por_time']} por time | Times: {len(ev['times'])}")
 
 
-
-def mostra_menu() -> None:
-    print("---------------------------------")
-    print("| BEM VINDO(A) AO PASSA A BOLA! |")
-    print("| O que você deseja acessar?    |")
-    print("---------------------------------")
-    print("[1] Cadastrar Usuário")
-    print("[2] Fazer Login")
-    print("[3] Ver Perfil")
-    print("[4] Sair da Conta")
-    print("[5] Consultar Eventos")
-    print("[0] Sair do Programa")
-    print("---------------------------------")
 
 def le_opcao_menu() -> int:
     while True:
