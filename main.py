@@ -84,7 +84,7 @@ def digita_senha() -> str:
            re.search(r"[0-9]", senha) and
            re.search(r"[\W_]", senha)):
 
-        senha: str = input("A senha deve ter pelo menos 8 caracteres, um número, uma letra maiúscula e minúscula, e um simbolo. Digite a senha novamente: ")
+        senha: str = input("A senha deve ter pelo menos 8 caracteres, um número, uma letra maiúscula e minúscula, e um simbolo. Digite a senha novamente: ").strip
 
 
     return senha
@@ -164,6 +164,7 @@ def menu_eventos_times() -> None:
         print("\n--- Eventos e Times ---")
         print("[1] Criar evento")
         print("[2] Listar eventos")
+        print("[3] configurar jogadoras / times (ADMIN)")
         print("[0] Voltar")
         op = input("Escolha: ").strip()
 
@@ -171,10 +172,54 @@ def menu_eventos_times() -> None:
             criar_evento()
         elif op == "2":
             listar_eventos()
+        elif op == "3":
+            configurar_evento_jogadoras_por_time()    
         elif op == "0":
             return
         else:
             print("Opção inválida.")
+
+def escolher_evento_id() -> int | None:
+    if not eventos:
+        print(" Não há eventos. Crie um antes.")
+        return None
+    listar_eventos()
+    while True:
+        s = input("ID do evento: ").strip()
+        if not s.isdigit():
+            print("Digite um número válido.")
+            continue
+        eid = int(s)
+        if any(ev["id"] == eid for ev in eventos):
+            return eid
+        print(" Evento não encontrado.")
+
+def configurar_evento_jogadoras_por_time() -> None:
+    """
+    ADMIN: altera o nº de jogadoras por time de um evento existente.
+    (Quando o módulo de times estiver ativo, podemos bloquear redução
+    abaixo do nº já inscrito nos times do evento.)
+    """
+    print("\n--- Configurar Evento (ADMIN) ---")
+    if not exige_admin():
+        return
+
+    eid = escolher_evento_id()
+    if eid is None:
+        return
+
+    # busca o evento
+    ev = next(e for e in eventos if e["id"] == eid)
+    atual = ev["jogadoras_por_time"]
+    print(f"Evento #{eid} — {ev['tipo']} | atual: {atual} jogadoras/time")
+
+    novo = le_inteiro_positivo("Novo nº de jogadoras por time: ")
+
+
+    ev["jogadoras_por_time"] = novo
+    print(f" Configurado: {atual} → {novo} jogadoras/time para o Evento #{eid}.")
+
+
 
 def criar_evento() -> None:
     """
@@ -196,7 +241,27 @@ def criar_evento() -> None:
         "jogadoras_por_time": jogadoras_por_time,
         "times": []
     })
-    print(f"✅ Evento #{id} criado: {tipo} | {jogadoras_por_time} jogadoras/time")
+    print(f"✅ Evento #{evento_id} criado: {tipo} | {jogadoras_por_time} jogadoras/time")
+
+
+# === Admin ===
+
+# === Essa DEF permite que o ADMIN Controle as configuracoes como quantidade de jogadoras por time. 
+ADMIN_PIN = "1234"  # Escolha sua senha
+
+def exige_admin() -> bool:
+    """
+    Pede o PIN do admin (3 tentativas).
+    """
+    tentativas = 3
+    while tentativas > 0:
+        pin = input("PIN do admin: ").strip()
+        if pin == ADMIN_PIN:
+            return True
+        tentativas -= 1
+        print(f"PIN incorreto. Tentativas restantes: {tentativas}")
+    print("Acesso de admin negado.")
+    return False
 
 
 def listar_eventos() -> None:
