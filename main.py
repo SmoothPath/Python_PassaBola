@@ -35,7 +35,66 @@ def le_inteiro_positivo(msg: str) -> int:
             continue
         return n
 
+def le_nao_vazio(msg: str) -> str:
+    while True:
+        s = input(msg).strip()
+        if s:
+            return s
+        print("O valor não pode ser vazio.")
 
+def obter_evento_por_id(eid: int) -> dict | None:
+    return next((e for e in eventos if e["id"] == eid), None)
+
+def obter_time_por_id(tid: int) -> dict | None:
+    return next((t for t in times if t["id"] == tid), None)
+
+def escolher_evento_id() -> int | None:
+    """
+    Lista e solicita um ID de evento válido.
+    """
+    if not eventos:
+        print("= Não há eventos. Crie um antes.")
+        return None
+    listar_eventos()
+    while True:
+        s = input("ID do evento: ").strip()
+        if not s.isdigit():
+            print("Digite um número válido.")
+            continue
+        eid = int(s)
+        if any(ev["id"] == eid for ev in eventos):
+            return eid
+        print(" Evento não encontrado.")
+
+def escolher_time_id(eid: int | None = None) -> int | None:
+    """
+    Lista e solicita um ID de time válido (opcionalmente filtrado por evento).
+    """
+    if not times:
+        print("(sem times cadastrados)")
+        return None
+
+    if eid is not None:
+        listar_times_por_evento(eid)
+        base = [t for t in times if t["event_id"] == eid]
+        if not base:
+            print(f"(evento #{eid} ainda não tem times)")
+            return None
+    else:
+        listar_times()
+
+    while True:
+        s = input("ID do time: ").strip()
+        if not s.isdigit():
+            print("Digite um número válido.")
+            continue
+        tid = int(s)
+        t = obter_time_por_id(tid)
+        if t and (eid is None or t["event_id"] == eid):
+            return tid
+        print(" Time não encontrado.")
+
+        
 # === USUÁRIO / AUTENTICAÇÃO =================================================
 def digita_email(checagem_unicidade: bool = False) -> str:
     """
@@ -515,18 +574,22 @@ def menu_eventos_times() -> None:
         print("[1] Criar evento")
         print("[2] Listar eventos")
         print("[3] Configurar jogadoras/time (ADMIN)")
+        print("[4] Times")
         print("[0] Voltar")
         op = input("Escolha: ").strip()
 
         if op == "1":
             criar_evento()
-            pausa()
+           
         elif op == "2":
             listar_eventos()
-            pausa()
+            
         elif op == "3":
             configurar_evento_jogadoras_por_time()
-            pausa()
+            
+        elif op == "4":
+            menu_times()
+               
         elif op == "0":
             return
         else:
