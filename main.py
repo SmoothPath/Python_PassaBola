@@ -49,6 +49,7 @@ def mostra_menu() -> None:
     print("[3] Ver Perfil")
     print("[4] Sair da Conta")
     print("[5] Consultar Eventos")
+    print("[6] Relatório")
     print("[0] Sair do Programa")
     print("---------------------------------")
    
@@ -243,6 +244,45 @@ def criar_evento() -> None:
     })
     print(f"✅ Evento #{evento_id} criado: {tipo} | {jogadoras_por_time} jogadoras/time")
 
+# === RELATORIO ==================
+
+def relatorios() -> None:
+    while True:
+        print("\n--- Relatórios ---")
+        print("[1] Usuários")
+        print("[2] Eventos")
+        print("[3] Times")
+        print("[0] Voltar")
+        op = input("Escolha: ").strip()
+
+        if op == "1":
+            relatorio_usuarios()
+            pausa()
+        elif op == "2":
+            relatorio_eventos()
+            pausa()
+        elif op == "3":
+            relatorio_times()
+            pausa()
+        elif op == "0":
+            return
+        else:
+            print("Opção inválida.")
+
+
+def relatorio_usuario() -> None:
+    print("\n-Usuário-")
+    if not usuarios:
+        print("(vazio)")
+    return        
+
+    for i, u in enumerate(usuarios,start=1):
+        nome = u.get("nome","(sem nome)")
+        email = u.get("email", "(sem email)")
+        print(f"{i:02d}. {nome} <{email}>")
+
+       
+
 
 # === Admin ===
 
@@ -300,7 +340,7 @@ while True:
     elif numero_menu == 5:
         menu_eventos_times()    
     elif numero_menu == 6:
-        print("Módulo de eventos ainda não implementado.\n")
+        relatorios()
     elif numero_menu == 0:
         print("Encerrando... até logo!")
         break
