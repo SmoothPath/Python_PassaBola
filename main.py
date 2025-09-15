@@ -17,13 +17,24 @@ _next_ids = {"evento": 1, "time": 1}
 EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
 def _novo_id(kind: str) -> int:
+    """
+    Gera e retorna um novo ID incremental único para o tipo especificado
+    (ex.: 'evento' ou 'time').
+    """
     _next_ids[kind] += 1
     return _next_ids[kind] - 1
 
 def pausa() -> None:
+    """
+    Pausa a execução até o usuário pressionar ENTER.
+    """
     input("\nPressione ENTER para continuar...")
 
 def le_inteiro_positivo(msg: str) -> int:
+    """
+    Lê um número inteiro positivo digitado pelo usuário,
+    repetindo até ser fornecido um valor válido.
+    """
     while True:
         s = input(msg).strip()
         if not s or not s.isdigit():
@@ -36,6 +47,9 @@ def le_inteiro_positivo(msg: str) -> int:
         return n
 
 def le_nao_vazio(msg: str) -> str:
+    """
+    Lê uma string não vazia digitada pelo usuário.
+    """
     while True:
         s = input(msg).strip()
         if s:
@@ -43,9 +57,17 @@ def le_nao_vazio(msg: str) -> str:
         print("O valor não pode ser vazio.")
 
 def obter_evento_por_id(eid: int) -> dict | None:
+    """
+    Retorna o evento correspondente ao ID informado,
+    ou None caso não exista.
+    """
     return next((e for e in eventos if e["id"] == eid), None)
 
 def obter_time_por_id(tid: int) -> dict | None:
+    """
+    Retorna o time correspondente ao ID informado,
+    ou None caso não exista.
+    """
     return next((t for t in times if t["id"] == tid), None)
 
 def escolher_evento_id() -> int | None:
@@ -129,6 +151,9 @@ def digita_senha() -> str:
     return senha
 
 def aceita_termos() -> None:
+    """
+    Solicita a aceitação dos termos de uso, exigindo resposta 's'.
+    """
     while True:
         v = input("Você aceita os termos de uso? (s/n) ").strip().lower()
         if v == "s":
@@ -289,6 +314,9 @@ def configurar_evento_jogadoras_por_time() -> None:
 
 # === RELATÓRIOS =============================================================
 def relatorios() -> None:
+    """
+    Exibe o menu de relatórios e direciona para a opção escolhida.
+    """
     while True:
         print("\n--- Relatórios ---")
         print("[1] Usuários")
@@ -312,6 +340,9 @@ def relatorios() -> None:
             print("Opção inválida.")
 
 def relatorio_usuarios() -> None:
+    """
+    Exibe um relatório com todos os usuários cadastrados.
+    """
     print("\n— Usuários —")
     if not usuarios:
         print("(vazio)")
@@ -322,6 +353,9 @@ def relatorio_usuarios() -> None:
         print(f"{i:02d}. {nome} <{email}>")
 
 def relatorio_eventos() -> None:
+    """
+    Exibe um relatório com todos os eventos cadastrados.
+    """
     print("\n— Eventos —")
     if not eventos:
         print("(vazio)")
@@ -334,6 +368,9 @@ def relatorio_eventos() -> None:
         print(f"#{eid} • {tipo} | {cap} jogadoras/time | {qtd_times} time(s)")
 
 def relatorio_times() -> None:
+    """
+    Exibe um relatório com todos os times cadastrados e suas jogadoras.
+    """
     print("\n— Times —")
     if not times:
         print("(vazio)")
@@ -357,6 +394,9 @@ def relatorio_times() -> None:
 # === TIMES  ====================================
 
 def listar_times() -> None:
+    """
+    Lista todos os times cadastrados em todos os eventos.
+    """
     print("\n— Times (geral) —")
     if not times:
         print("(vazio)")
@@ -369,6 +409,9 @@ def listar_times() -> None:
             print(f"   · {j}")
 
 def listar_times_por_evento(eid: int) -> None:
+    """
+    Lista todos os times cadastrados para um evento específico.
+    """
     print(f"\n— Times do Evento #{eid} —")
     base = [t for t in times if t["event_id"] == eid]
     if not base:
@@ -382,6 +425,9 @@ def listar_times_por_evento(eid: int) -> None:
             print(f"   · {j}")
 
 def criar_time() -> None:
+    """
+    Cria um novo time associado a um evento.
+    """
     print("\n--- Criar Time ---")
     eid = escolher_evento_id()
     if eid is None:
@@ -394,6 +440,9 @@ def criar_time() -> None:
     print(f" Time #{tid} criado no Evento #{eid}: {nome}")
 
 def excluir_time() -> None:
+    """
+    Exclui um time de um evento e remove sua referência do evento.
+    """
     print("\n--- Excluir Time ---")
     eid = escolher_evento_id()
     if eid is None:
@@ -413,6 +462,9 @@ def excluir_time() -> None:
     print(f" Time #{tid} excluído.")
 
 def adicionar_jogadora() -> None:
+    """
+    Adiciona uma jogadora a um time, respeitando o limite do evento.
+    """
     print("\n--- Adicionar Jogadora ---")
     eid = escolher_evento_id()
     if eid is None:
@@ -437,6 +489,9 @@ def adicionar_jogadora() -> None:
     print(f" Jogadora '{nome}' adicionada ao Time #{tid}.")
 
 def remover_jogadora() -> None:
+    """
+    Remove uma jogadora existente de um time.
+    """
     print("\n--- Remover Jogadora ---")
     eid = escolher_evento_id()
     if eid is None:
@@ -458,6 +513,9 @@ def remover_jogadora() -> None:
     print(f" Jogadora '{nome}' removida do Time #{tid}.")
 
 def _chunks_round_robin(itens: list[str], n_grupos: int) -> list[list[str]]:
+    """
+    Divide uma lista de itens em n grupos de forma balanceada (round-robin).
+    """
     grupos = [[] for _ in range(n_grupos)]
     for i, x in enumerate(itens):
         grupos[i % n_grupos].append(x)
@@ -558,6 +616,7 @@ def mostra_menu() -> None:
     print("---------------------------------")
 
 def le_opcao_menu() -> int:
+    '''Essa função lê e verifica/valida o número inserido pelo usuário para acessar uma funcionalidade do Menu'''
     while True:
         op = input("Digite a ação que deseja realizar: ").strip()
         if not op.isdigit():
