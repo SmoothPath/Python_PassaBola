@@ -1,680 +1,288 @@
-
-# === IMPORTAÇÕES =============================================================
+import json
+import os
 import re
+from typing import List, Dict, Optional
+from math import ceil
 
+# ============================================================
+# ARQUIVOS DE DADOS
+# ============================================================
+ARQ_USUARIOS = "usuarios.json"
+ARQ_EVENTOS = "eventos.json"
+ARQ_TIMES = "times.json"
 
-# === DADOS EM MEMÓRIA ========================================================
-usuarios: list[dict] = []          # {"nome": str, "email": str, "senha": str}
-usuario_logado: dict | None = None
+# ============================================================
+# CARREGAR E SALVAR DADOS
+# ============================================================
+def carregar_dados(arquivo: str) -> List[Dict]:
+    if os.path.exists(arquivo):
+        with open(arquivo, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return []
+    return []
 
-eventos: list[dict] = []           # {"id": int, "tipo": str, "jogadoras_por_time": int, "times": list[int]}
-times: list[dict] = []             # {"id": int, "nome": str, "event_id": int, "jogadoras": list[str]}
+def salvar_dados(arquivo: str, dados: List[Dict]) -> None:
+    with open(arquivo, "w", encoding="utf-8") as f:
+        json.dump(dados, f, indent=4, ensure_ascii=False)
 
-_next_ids = {"evento": 1, "time": 1}
+# ============================================================
+# VARIÁVEIS GLOBAIS
+# ============================================================
+usuarios: List[Dict] = carregar_dados(ARQ_USUARIOS)
+eventos: List[Dict] = carregar_dados(ARQ_EVENTOS)
+times: List[Dict] = carregar_dados(ARQ_TIMES)
+usuario_logado: Optional[Dict] = None
+_next_ids = {"evento": len(eventos)+1, "time": len(times)+1}
 
+# ============================================================
+# CONTA PADRÃO ADMIN
+# ============================================================
+ADMIN_PADRAO = {
+    "nome": "Admin Principal",
+    "email": "admin@passabola.com",
+    "senha": "admin123",
+    "perfil": "admin"
+}
 
-# === HELPERS / UTILITÁRIOS ==================================================
+# ============================================================
+# VALIDAÇÃO
+# ============================================================
 EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
+def input_int(msg: str) -> int:
+    while True:
+        try:
+            return int(input(msg))
+        except ValueError:
+            print("⚠️ Digite um número válido.")
+
+def input_str(msg: str) -> str:
+    while True:
+        valor = input(msg).strip()
+        if valor:
+            return valor
+        print("⚠️ O campo não pode ficar vazio.")
+
 def _novo_id(kind: str) -> int:
-    """
-    Gera e retorna um novo ID incremental único para o tipo especificado
-    (ex.: 'evento' ou 'time').
-    """
     _next_ids[kind] += 1
     return _next_ids[kind] - 1
 
-def pausa() -> None:
-    """
-    Pausa a execução até o usuário pressionar ENTER.
-    """
-    input("\nPressione ENTER para continuar...")
-
-def le_inteiro_positivo(msg: str) -> int:
-    """
-    Lê um número inteiro positivo digitado pelo usuário,
-    repetindo até ser fornecido um valor válido.
-    """
+# ============================================================
+# USUÁRIOS / LOGIN
+# ============================================================
+def cadastrar_usuario() -> None:
+    print("\n--- Cadastro de Usuário ---")
+    nome = input_str("Nome completo: ")
+    while len(nome.split()) < 2:
+        nome = input_str("O nome deve ter pelo menos duas palavras. Digite novamente: ")
     while True:
-        s = input(msg).strip()
-        if not s or not s.isdigit():
-            print("Informe um número inteiro positivo.")
-            continue
-        n = int(s)
-        if n <= 0:
-            print("O número deve ser maior que zero.")
-            continue
-        return n
-
-def le_nao_vazio(msg: str) -> str:
-    """
-    Lê uma string não vazia digitada pelo usuário.
-    """
-    while True:
-        s = input(msg).strip()
-        if s:
-            return s
-        print("O valor não pode ser vazio.")
-
-def obter_evento_por_id(eid: int) -> dict | None:
-    """
-    Retorna o evento correspondente ao ID informado,
-    ou None caso não exista.
-    """
-    return next((e for e in eventos if e["id"] == eid), None)
-
-def obter_time_por_id(tid: int) -> dict | None:
-    """
-    Retorna o time correspondente ao ID informado,
-    ou None caso não exista.
-    """
-    return next((t for t in times if t["id"] == tid), None)
-
-def escolher_evento_id() -> int | None:
-    """
-    Lista e solicita um ID de evento válido.
-    """
-    if not eventos:
-        print("= Não há eventos. Crie um antes.")
-        return None
-    listar_eventos()
-    while True:
-        s = input("ID do evento: ").strip()
-        if not s.isdigit():
-            print("Digite um número válido.")
-            continue
-        eid = int(s)
-        if any(ev["id"] == eid for ev in eventos):
-            return eid
-        print(" Evento não encontrado.")
-
-def escolher_time_id(eid: int | None = None) -> int | None:
-    """
-    Lista e solicita um ID de time válido (opcionalmente filtrado por evento).
-    """
-    if not times:
-        print("(sem times cadastrados)")
-        return None
-
-    if eid is not None:
-        listar_times_por_evento(eid)
-        base = [t for t in times if t["event_id"] == eid]
-        if not base:
-            print(f"(evento #{eid} ainda não tem times)")
-            return None
-    else:
-        listar_times()
-
-    while True:
-        s = input("ID do time: ").strip()
-        if not s.isdigit():
-            print("Digite um número válido.")
-            continue
-        tid = int(s)
-        t = obter_time_por_id(tid)
-        if t and (eid is None or t["event_id"] == eid):
-            return tid
-        print(" Time não encontrado.")
-
-        
-# === USUÁRIO / AUTENTICAÇÃO =================================================
-def digita_email(checagem_unicidade: bool = False) -> str:
-    """
-    Lê um e-mail válido. Se checagem_unicidade=True, impede duplicados.
-    """
-    while True:
-        email: str = input("Digite o seu e-mail: ").strip()
+        email = input_str("Email: ")
         if not EMAIL_REGEX.match(email):
-            print("E-mail inválido. Exemplo válido: nome@dominio.com")
+            print("E-mail inválido. Exemplo: nome@dominio.com")
             continue
-        if checagem_unicidade and any(u["email"].lower() == email.lower() for u in usuarios):
+        if any(u["email"].lower() == email.lower() for u in usuarios):
             print("E-mail já cadastrado. Informe outro.")
             continue
-        return email
+        break
+    senha = input_str("Senha: ")
+    usuarios.append({"nome": nome, "email": email, "senha": senha, "perfil": "jogadora"})
+    salvar_dados(ARQ_USUARIOS, usuarios)
+    print("✅ Usuário cadastrado com sucesso!")
 
-def digita_senha() -> str:
-    """
-    Senha válida:
-    - mínimo 8 chars
-    - 1 maiúscula, 1 minúscula, 1 número e 1 símbolo
-    """
-    senha: str = input("Digite a sua senha: ").strip()
-    while not (len(senha) >= 8 and
-               re.search(r"[A-Z]", senha) and
-               re.search(r"[a-z]", senha) and
-               re.search(r"[0-9]", senha) and
-               re.search(r"[\W_]", senha)):
-        senha = input(
-            "A senha deve ter pelo menos 8 caracteres, um número, uma letra maiúscula e minúscula, "
-            "e um símbolo. Digite a senha novamente: "
-        ).strip()
-    return senha
+def login() -> Optional[Dict]:
+    print("\n--- Login ---")
+    print("1. Jogadora")
+    print("2. Admin")
+    tipo = input_int("Escolha: ")
+    email = input_str("Email: ")
+    senha = input_str("Senha: ")
 
-def aceita_termos() -> None:
-    """
-    Solicita a aceitação dos termos de uso, exigindo resposta 's'.
-    """
-    while True:
-        v = input("Você aceita os termos de uso? (s/n) ").strip().lower()
-        if v == "s":
-            return
-        print("Você precisa aceitar os termos de uso para continuar (responda 's').")
-
-def cadastra_usuario() -> None:
-    """
-    Solicita nome completo, e-mail único, senha válida e termos.
-    """
-    nome: str = input("Digite o seu nome e sobrenome: ").strip()
-    while len([p for p in nome.split() if p]) < 2:
-        nome = input("O nome deve ter pelo menos duas palavras. Digite o nome novamente: ").strip()
-
-    email: str = digita_email(checagem_unicidade=True)
-    senha: str = digita_senha()
-    aceita_termos()
-
-    usuarios.append({"nome": nome, "email": email, "senha": senha})
-    print(" Usuário cadastrado com sucesso!")
-
-def fazer_login() -> None:
-    """
-    Autentica por e-mail (case-insensitive) e senha.
-    """
-    global usuario_logado
-
-    if usuario_logado:
-        print("Você já está logado.\n")
-        return
-
-    email = input("E-mail: ").strip()
-    senha = input("Senha: ").strip()
-
-    for u in usuarios:
-        if u.get("email", "").lower() == email.lower() and u.get("senha", "") == senha:
-            usuario_logado = u
-            print(f" Login realizado com sucesso! Bem-vindo, {u.get('nome','usuário')}.\n")
-            return
-
-    print(" E-mail ou senha incorretos.\n")
-
-def sair_da_conta() -> None:
-    """
-    Faz logout do usuário logado.
-    """
-    global usuario_logado
-    if usuario_logado:
-        usuario_logado = None
-        print("Você saiu da conta.\n")
-    else:
-        print("Você não está logado.\n")
-
-def ver_perfil() -> None:
-    """
-    Exibe dados do usuário logado (sem mostrar senha).
-    """
-    if usuario_logado:
-        print("\n------ Perfil ------")
-        print(f"Nome:  {usuario_logado.get('nome')}")
-        print(f"E-mail:{usuario_logado.get('email')}")
-    else:
-        print("Você precisa estar logado para ver o perfil.\n")
-
-
-# === ADMIN ==================================================================
-ADMIN_PIN = "1234"  # troque depois
-
-def exige_admin() -> bool:
-    """
-    Pede o PIN do admin (3 tentativas).
-    """
-    tentativas = 3
-    while tentativas > 0:
-        pin = input("PIN do admin: ").strip()
-        if pin == ADMIN_PIN:
-            return True
-        tentativas -= 1
-        print(f"PIN incorreto. Tentativas restantes: {tentativas}")
-    print("Acesso de admin negado.")
-    return False
-
-
-# === EVENTOS (CRUD BÁSICO + CONFIG) =========================================
-def listar_eventos() -> None:
-    """
-    Lista eventos cadastrados.
-    """
-    print("\n--- Eventos Cadastrados ---")
-    if not eventos:
-        print("(sem eventos)")
-        return
-    for ev in eventos:
-        print(f"#{ev['id']} – {ev['tipo']} | {ev['jogadoras_por_time']} por time | Times: {len(ev['times'])}")
-
-def escolher_evento_id() -> int | None:
-    """
-    Lista e solicita um ID de evento válido.
-    """
-    if not eventos:
-        print("= Não há eventos. Crie um antes.")
+    if tipo == 1:
+        for u in usuarios:
+            if u["email"] == email and u["senha"] == senha and u["perfil"] == "jogadora":
+                print(f"✅ Bem-vinda, {u['nome']}!")
+                return u
+        print("❌ Email ou senha incorretos para jogadora.")
         return None
-    listar_eventos()
-    while True:
-        s = input("ID do evento: ").strip()
-        if not s.isdigit():
-            print("Digite um número válido.")
-            continue
-        eid = int(s)
-        if any(ev["id"] == eid for ev in eventos):
-            return eid
-        print(" Evento não encontrado.")
-
-def criar_evento() -> None:
-    """
-    Cria um evento com: tipo de jogo e nº de jogadoras por time.
-    """
-    print("\n--- Criar Evento ---")
-    tipo = input("Tipo de jogo (ex.: Amistoso, Oitavas, Quartas de final, Semi-final, Final): ").strip()
-    if not tipo:
-        print(" Tipo de jogo não pode ser vazio.")
-        return
-
-    jogadoras_por_time = le_inteiro_positivo("Nº de jogadoras por time (ex.: 5, 7, 11): ")
-
-    evento_id = _novo_id("evento")
-    eventos.append({
-        "id": evento_id,
-        "tipo": tipo,
-        "jogadoras_por_time": jogadoras_por_time,
-        "times": []
-    })
-    print(f" Evento #{evento_id} criado: {tipo} | {jogadoras_por_time} jogadoras/time")
-
-def configurar_evento_jogadoras_por_time() -> None:
-    """
-    ADMIN: altera o nº de jogadoras por time de um evento existente.
-    (Quando o módulo de times estiver ativo, bloquear redução abaixo do já inscrito.)
-    """
-    print("\n--- Configurar Evento (ADMIN) ---")
-    if not exige_admin():
-        return
-
-    eid = escolher_evento_id()
-    if eid is None:
-        return
-
-    ev = next(e for e in eventos if e["id"] == eid)
-    atual = ev["jogadoras_por_time"]
-    print(f"Evento #{eid} — {ev['tipo']} | atual: {atual} jogadoras/time")
-
-    novo = le_inteiro_positivo("Novo nº de jogadoras por time: ")
-
-   
-    ev["jogadoras_por_time"] = novo
-    print(f" Configurado: {atual} → {novo} jogadoras/time para o Evento #{eid}.")
-
-
-# === RELATÓRIOS =============================================================
-def relatorios() -> None:
-    """
-    Exibe o menu de relatórios e direciona para a opção escolhida.
-    """
-    while True:
-        print("\n--- Relatórios ---")
-        print("[1] Usuários")
-        print("[2] Eventos")
-        print("[3] Times")
-        print("[0] Voltar")
-        op = input("Escolha: ").strip()
-
-        if op == "1":
-            relatorio_usuarios()
-            pausa()
-        elif op == "2":
-            relatorio_eventos()
-            pausa()
-        elif op == "3":
-            relatorio_times()
-            pausa()
-        elif op == "0":
-            return
+    elif tipo == 2:
+        if email == ADMIN_PADRAO["email"] and senha == ADMIN_PADRAO["senha"]:
+            print(f"✅ Bem-vindo, {ADMIN_PADRAO['nome']}!")
+            return ADMIN_PADRAO
         else:
-            print("Opção inválida.")
+            print("❌ Email ou senha incorretos para admin.")
+            return None
+    else:
+        print("⚠️ Tipo inválido.")
+        return None
 
-def relatorio_usuarios() -> None:
-    """
-    Exibe um relatório com todos os usuários cadastrados.
-    """
-    print("\n— Usuários —")
-    if not usuarios:
-        print("(vazio)")
-        return
-    for i, u in enumerate(usuarios, start=1):
-        nome = u.get("nome", "(sem nome)")
-        email = u.get("email", "(sem e-mail)")
-        print(f"{i:02d}. {nome} <{email}>")
+def ver_perfil(usuario: Dict) -> None:
+    print("\n--- Perfil ---")
+    print(f"Nome: {usuario['nome']}")
+    print(f"Email: {usuario['email']}")
+    print(f"Perfil: {usuario['perfil']}")
 
-def relatorio_eventos() -> None:
-    """
-    Exibe um relatório com todos os eventos cadastrados.
-    """
-    print("\n— Eventos —")
+# ============================================================
+# EVENTOS
+# ============================================================
+def listar_eventos() -> None:
+    print("\n--- Eventos ---")
     if not eventos:
-        print("(vazio)")
+        print("⚠️ Nenhum evento cadastrado.")
         return
-    for ev in eventos:
-        eid = ev.get("id")
-        tipo = ev.get("tipo", "(sem tipo)")
-        cap = ev.get("jogadoras_por_time", "?")
-        qtd_times = len(ev.get("times", []))
-        print(f"#{eid} • {tipo} | {cap} jogadoras/time | {qtd_times} time(s)")
+    for i, e in enumerate(eventos, 1):
+        inscritos = len(e.get("inscritos", []))
+        print(f"{i}. {e['nome']} - {e['local']} - {e['data']} ({inscritos} inscritos)")
 
-def relatorio_times() -> None:
-    """
-    Exibe um relatório com todos os times cadastrados e suas jogadoras.
-    """
-    print("\n— Times —")
-    if not times:
-        print("(vazio)")
-        return
+def cadastrar_evento() -> None:
+    print("\n--- Cadastrar Evento ---")
+    nome = input_str("Nome: ")
+    local = input_str("Local: ")
+    data = input_str("Data: ")
+    eventos.append({"id": _novo_id("evento"), "nome": nome, "local": local, "data": data, "inscritos": [], "times": [], "jogadoras_por_time": 5})
+    salvar_dados(ARQ_EVENTOS, eventos)
+    print("✅ Evento cadastrado!")
 
-    for t in times:
-        tid = t.get("id")
-        nome = t.get("nome", "(sem nome)")
-        event_id = t.get("event_id", "?")
-        jogadoras = t.get("jogadoras", [])
-        cap = "?"
-        ev = next((e for e in eventos if e.get("id") == event_id), None)
-        if ev:
-            cap = ev.get("jogadoras_por_time", "?")
+def inscrever_em_evento(jogadora: Dict) -> None:
+    listar_eventos()
+    if not eventos: return
+    escolha = input_int("Número do evento para inscrição: ")
+    if 1 <= escolha <= len(eventos):
+        evento = eventos[escolha-1]
+        if jogadora["email"] not in evento.get("inscritos", []):
+            evento["inscritos"].append(jogadora["email"])
+            salvar_dados(ARQ_EVENTOS, eventos)
+            print(f"✅ {jogadora['nome']} inscrita em {evento['nome']}")
+        else:
+            print("⚠️ Já inscrita neste evento.")
+    else:
+        print("⚠️ Evento inválido.")
 
-        print(f"Time #{tid} • {nome} | Evento #{event_id} | {len(jogadoras)}/{cap} jogadoras")
-        for j in jogadoras:
-            print(f"   · {j}")
+def ver_inscricoes(jogadora: Dict) -> None:
+    print("\n--- Meus Eventos ---")
+    encontrou = False
+    for e in eventos:
+        if jogadora["email"] in e.get("inscritos", []):
+            print(f"- {e['nome']} ({e['data']}, {e['local']})")
+            encontrou = True
+    if not encontrou:
+        print("⚠️ Nenhum evento inscrito.")
 
-
-# === TIMES  ====================================
-
+# ============================================================
+# TIMES
+# ============================================================
 def listar_times() -> None:
-    """
-    Lista todos os times cadastrados em todos os eventos.
-    """
-    print("\n— Times (geral) —")
+    print("\n--- Times ---")
     if not times:
-        print("(vazio)")
+        print("⚠️ Nenhum time cadastrado.")
         return
     for t in times:
-        ev = obter_evento_por_id(t["event_id"])
+        ev = next((e for e in eventos if e["id"] == t["event_id"]), None)
         cap = ev["jogadoras_por_time"] if ev else "?"
         print(f"#{t['id']} • {t['nome']} | Evento #{t['event_id']} | {len(t['jogadoras'])}/{cap}")
         for j in t["jogadoras"]:
-            print(f"   · {j}")
-
-def listar_times_por_evento(eid: int) -> None:
-    """
-    Lista todos os times cadastrados para um evento específico.
-    """
-    print(f"\n— Times do Evento #{eid} —")
-    base = [t for t in times if t["event_id"] == eid]
-    if not base:
-        print("(nenhum time para este evento)")
-        return
-    ev = obter_evento_por_id(eid)
-    cap = ev["jogadoras_por_time"] if ev else "?"
-    for t in base:
-        print(f"#{t['id']} • {t['nome']} | {len(t['jogadoras'])}/{cap}")
-        for j in t["jogadoras"]:
-            print(f"   · {j}")
+            print(f" · {j}")
 
 def criar_time() -> None:
-    """
-    Cria um novo time associado a um evento.
-    """
-    print("\n--- Criar Time ---")
-    eid = escolher_evento_id()
-    if eid is None:
+    listar_eventos()
+    eid = input_int("ID do evento para criar time: ")
+    evento = next((e for e in eventos if e["id"] == eid), None)
+    if not evento:
+        print("⚠️ Evento inválido.")
         return
-    nome = le_nao_vazio("Nome do time: ")
+    nome_time = input_str("Nome do time: ")
     tid = _novo_id("time")
-    times.append({"id": tid, "nome": nome, "event_id": eid, "jogadoras": []})
-    ev = obter_evento_por_id(eid)
-    ev["times"].append(tid)
-    print(f" Time #{tid} criado no Evento #{eid}: {nome}")
+    times.append({"id": tid, "nome": nome_time, "event_id": eid, "jogadoras": []})
+    evento["times"].append(tid)
+    salvar_dados(ARQ_EVENTOS, eventos)
+    salvar_dados(ARQ_TIMES, times)
+    print(f"✅ Time {nome_time} criado para o evento {evento['nome']}.")
 
-def excluir_time() -> None:
-    """
-    Exclui um time de um evento e remove sua referência do evento.
-    """
-    print("\n--- Excluir Time ---")
-    eid = escolher_evento_id()
-    if eid is None:
+# Função de adicionar jogadora a time
+def adicionar_jogadora_time() -> None:
+    listar_times()
+    tid = input_int("ID do time: ")
+    t = next((t for t in times if t["id"] == tid), None)
+    if not t:
+        print("⚠️ Time inválido.")
         return
-    tid = escolher_time_id(eid)
-    if tid is None:
+    ev = next((e for e in eventos if e["id"] == t["event_id"]), None)
+    if not ev:
+        print("⚠️ Evento não encontrado.")
         return
-    t = obter_time_por_id(tid)
-    ev = obter_evento_por_id(t["event_id"]) if t else None
-    
-    idx = next((i for i, x in enumerate(times) if x["id"] == tid), None)
-    if idx is not None:
-        times.pop(idx)
-  
-    if ev:
-        ev["times"] = [x for x in ev["times"] if x != tid]
-    print(f" Time #{tid} excluído.")
-
-def adicionar_jogadora() -> None:
-    """
-    Adiciona uma jogadora a um time, respeitando o limite do evento.
-    """
-    print("\n--- Adicionar Jogadora ---")
-    eid = escolher_evento_id()
-    if eid is None:
-        return
-    tid = escolher_time_id(eid)
-    if tid is None:
-        return
-
-    t = obter_time_por_id(tid)
-    ev = obter_evento_por_id(eid)
     cap = ev["jogadoras_por_time"]
-
     if len(t["jogadoras"]) >= cap:
-        print(" Este time já está no limite de jogadoras.")
+        print("⚠️ Time cheio.")
         return
-
-    nome = le_nao_vazio("Nome da jogadora: ")
+    nome = input_str("Nome da jogadora: ")
     if nome in t["jogadoras"]:
-        print(" Jogadora já está nesse time.")
+        print("⚠️ Jogadora já neste time.")
         return
     t["jogadoras"].append(nome)
-    print(f" Jogadora '{nome}' adicionada ao Time #{tid}.")
+    salvar_dados(ARQ_TIMES, times)
+    print(f"✅ Jogadora {nome} adicionada ao time {t['nome']}.")
 
-def remover_jogadora() -> None:
-    """
-    Remove uma jogadora existente de um time.
-    """
-    print("\n--- Remover Jogadora ---")
-    eid = escolher_evento_id()
-    if eid is None:
-        return
-    tid = escolher_time_id(eid)
-    if tid is None:
-        return
-
-    t = obter_time_por_id(tid)
-    if not t["jogadoras"]:
-        print(" Este time não possui jogadoras.")
-        return
-
-    nome = le_nao_vazio("Nome da jogadora para remover: ")
-    if nome not in t["jogadoras"]:
-        print(" Jogadora não encontrada no time.")
-        return
-    t["jogadoras"].remove(nome)
-    print(f" Jogadora '{nome}' removida do Time #{tid}.")
-
-def _chunks_round_robin(itens: list[str], n_grupos: int) -> list[list[str]]:
-    """
-    Divide uma lista de itens em n grupos de forma balanceada (round-robin).
-    """
-    grupos = [[] for _ in range(n_grupos)]
-    for i, x in enumerate(itens):
-        grupos[i % n_grupos].append(x)
-    return grupos
-
-def montar_times_automaticamente() -> None:
-    """
-    responsavel por receber, verificar e criar times auto
-    """
-    print("\n--- Montar Times Automaticamente ---")
-    eid = escolher_evento_id()
-    if eid is None:
-        return
-    ev = obter_evento_por_id(eid)
-    cap = ev["jogadoras_por_time"]
-
-    nomes_raw = le_nao_vazio("Cole os nomes separados por vírgula: ")
-    nomes = [n.strip() for n in nomes_raw.split(",") if n.strip()]
-    if not nomes:
-        print("Nenhum nome informado.")
-        return
-
-    
-    from math import ceil
-    n_times = ceil(len(nomes) / cap)
-
- 
-    grupos = _chunks_round_robin(nomes, n_times)
-
-    # cria times com nomes padrão (Time A, B, C...)
-    alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    for i, grupo in enumerate(grupos):
-        tid = _novo_id("time")
-        nome_time = f"Time {alfabeto[i]}" if i < len(alfabeto) else f"Time {i+1}"
-        times.append({"id": tid, "nome": nome_time, "event_id": eid, "jogadoras": grupo[:cap]})
-        ev["times"].append(tid)
-        print(f" Criado #{tid} • {nome_time} ({len(grupo[:cap])}/{cap})")
-
-    print(" Times gerados com sucesso!")
-
-def menu_times() -> None:
-    """
-    Menu de gestão de times.
-    """
+# ============================================================
+# MENUS
+# ============================================================
+def menu_jogadora(jogadora: Dict) -> None:
     while True:
-        print("\n--- Times ---")
-        print("[1] Criar time")
-        print("[2] Listar times (geral)")
-        print("[3] Listar times por evento")
-        print("[4] Adicionar jogadora em um time")
-        print("[5] Remover jogadora de um time")
-        print("[6] Excluir time")
-        print("[7] Montar times automaticamente (lista de nomes)")
-        print("[0] Voltar")
-        op = input("Escolha: ").strip()
+        print("\n--- Menu Jogadora ---")
+        print("1. Listar eventos")
+        print("2. Inscrever-se em evento")
+        print("3. Meus eventos")
+        print("0. Logout")
+        opc = input_int("Escolha: ")
+        if opc == 1: listar_eventos()
+        elif opc == 2: inscrever_em_evento(jogadora)
+        elif opc == 3: ver_inscricoes(jogadora)
+        elif opc == 0: break
+        else: print("⚠️ Opção inválida.")
 
-        if op == "1":
-            criar_time(); pausa()
-        elif op == "2":
-            listar_times(); pausa()
-        elif op == "3":
-            eid = escolher_evento_id()
-            if eid is not None:
-                listar_times_por_evento(eid)
-            pausa()
-        elif op == "4":
-            adicionar_jogadora(); pausa()
-        elif op == "5":
-            remover_jogadora(); pausa()
-        elif op == "6":
-            excluir_time(); pausa()
-        elif op == "7":
-            montar_times_automaticamente(); pausa()
-        elif op == "0":
-            return
-        else:
-            print("Opção inválida.")
-
-
-
-# === MENUS / UI =============================================================
-def mostra_menu() -> None:
-    """
-    Exibe o menu principal do sistema.
-    """
-    print("---------------------------------")
-    print("| BEM VINDO(A) AO PASSA A BOLA! |")
-    print("|                               |")
-    print("| O que você deseja acessar?    |")
-    print("---------------------------------")
-    print("[1] Cadastrar Usuário")
-    print("[2] Fazer Login")
-    print("[3] Ver Perfil")
-    print("[4] Sair da Conta")
-    print("[5] Eventos e Times")
-    print("[6] Relatórios")
-    print("[0] Sair do Programa")
-    print("---------------------------------")
-
-def le_opcao_menu() -> int:
-    '''Essa função lê e verifica/valida o número inserido pelo usuário para acessar uma funcionalidade do Menu'''
+def menu_admin(admin: Dict) -> None:
     while True:
-        op = input("Digite a ação que deseja realizar: ").strip()
-        if not op.isdigit():
-            print("Informe um número válido.")
-            continue
-        return int(op)
+        print("\n--- Menu Admin ---")
+        print("1. Cadastrar usuário")
+        print("2. Listar usuários")
+        print("3. Cadastrar evento")
+        print("4. Listar eventos")
+        print("5. Criar time")
+        print("6. Listar times")
+        print("7. Adicionar jogadora a time")
+        print("0. Logout")
+        opc = input_int("Escolha: ")
+        if opc == 1: cadastrar_usuario()
+        elif opc == 2:
+            for i, u in enumerate(usuarios, 1):
+                print(f"{i}. {u['nome']} - {u['email']} ({u['perfil']})")
+        elif opc == 3: cadastrar_evento()
+        elif opc == 4: listar_eventos()
+        elif opc == 5: criar_time()
+        elif opc == 6: listar_times()
+        elif opc == 7: adicionar_jogadora_time()
+        elif opc == 0: break
+        else: print("⚠️ Opção inválida.")
 
-def menu_eventos_times() -> None:
-    """
-    Menu de gestão de eventos (e, futuramente, times).
-    """
+def menu_principal() -> None:
+    global usuario_logado
     while True:
-        print("\n--- Eventos e Times ---")
-        print("[1] Criar evento")
-        print("[2] Listar eventos")
-        print("[3] Configurar jogadoras/time (ADMIN)")
-        print("[4] Times")
-        print("[0] Voltar")
-        op = input("Escolha: ").strip()
+        print("\n=== Passa a Bola ===")
+        print("1. Cadastrar usuário")
+        print("2. Login")
+        print("0. Sair")
+        opc = input_int("Escolha: ")
+        if opc == 1: cadastrar_usuario()
+        elif opc == 2:
+            usuario_logado = login()
+            if usuario_logado:
+                if usuario_logado["perfil"] == "jogadora": menu_jogadora(usuario_logado)
+                elif usuario_logado["perfil"] == "admin": menu_admin(usuario_logado)
+        elif opc == 0: break
+        else: print("⚠️ Opção inválida.")
 
-        if op == "1":
-            criar_evento()
-           
-        elif op == "2":
-            listar_eventos()
-            
-        elif op == "3":
-            configurar_evento_jogadoras_por_time()
-            
-        elif op == "4":
-            menu_times()
-               
-        elif op == "0":
-            return
-        else:
-            print("Opção inválida.")
-
-
-# === LOOP PRINCIPAL =========================================================
+# ============================================================
+# EXECUÇÃO
+# ============================================================
 if __name__ == "__main__":
-    while True:
-        mostra_menu()
-        numero_menu = le_opcao_menu()
-
-        if numero_menu == 1:
-            cadastra_usuario()
-        elif numero_menu == 2:
-            fazer_login()
-        elif numero_menu == 3:
-            ver_perfil()
-        elif numero_menu == 4:
-            sair_da_conta()
-        elif numero_menu == 5:
-            menu_eventos_times()
-        elif numero_menu == 6:
-            relatorios()
-        elif numero_menu == 0:
-            print("Encerrando... até logo!")
-            break
-        else:
-            print("Opção inválida.\n")
+    menu_principal()

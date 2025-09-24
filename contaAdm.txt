@@ -1,0 +1,6 @@
+ADMIN_PADRAO = {
+    "nome": "Admin Principal",
+    "email": "admin@passabola.com",
+    "senha": "admin123",
+    "perfil": "admin"
+}
