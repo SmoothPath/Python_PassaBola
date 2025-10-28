@@ -1,0 +1,26 @@
+[
+    {
+        "nome": "Geovana Cardoso",
+        "email": "geo@gmail.com",
+        "senha": "1234",
+        "perfil": "jogadora"
+    },
+    {
+        "nome": "Julia Silva",
+        "email": "julia@gmail.com",
+        "senha": "1234",
+        "perfil": "jogadora"
+    },
+    {
+        "nome": "Yasmin Soares",
+        "email": "yasmin@gmail.com",
+        "senha": "1234",
+        "perfil": "jogadora"
+    },
+    {
+        "nome": "Thais Silva",
+        "email": "thais@gmail.com",
+        "senha": "1234",
+        "perfil": "jogadora"
+    }
+]

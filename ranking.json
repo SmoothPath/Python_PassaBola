@@ -1,0 +1,22 @@
+[
+    {
+        "nome": "Julia Silva",
+        "email": "julia@gmail.com",
+        "eventos": 3
+    },
+    {
+        "nome": "Geovana Cardoso",
+        "email": "geo@gmail.com",
+        "eventos": 3
+    },
+    {
+        "nome": "Yasmin Soares",
+        "email": "yasmin@gmail.com",
+        "eventos": 2
+    },
+    {
+        "nome": "Thais Silva",
+        "email": "thais@gmail.com",
+        "eventos": 1
+    }
+]

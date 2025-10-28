@@ -1,0 +1,41 @@
+[
+    {
+        "id": 1,
+        "nome": "Campeonato Passa a Bola",
+        "local": "Avenida Paulista",
+        "data": "12/02/2025",
+        "inscritos": [
+            "julia@gmail.com",
+            "geo@gmail.com",
+            "yasmin@gmail.com",
+            "thais@gmail.com"
+        ],
+        "times": [],
+        "jogadoras_por_time": 5
+    },
+    {
+        "id": 2,
+        "nome": "Encontro Mensal 2",
+        "local": "Rua da Consolação",
+        "data": "24/05/2026",
+        "inscritos": [
+            "julia@gmail.com",
+            "geo@gmail.com",
+            "yasmin@gmail.com"
+        ],
+        "times": [],
+        "jogadoras_por_time": 5
+    },
+    {
+        "id": 3,
+        "nome": "Encontro Semanal 3",
+        "local": "Rua dos esportes",
+        "data": "15/05/2026",
+        "inscritos": [
+            "geo@gmail.com",
+            "julia@gmail.com"
+        ],
+        "times": [],
+        "jogadoras_por_time": 5
+    }
+]
