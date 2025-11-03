@@ -183,6 +183,54 @@ def inscrever_em_evento(jogadora: Dict) -> None:
     print(f"{jogadora['nome']} inscrita em {evento['nome']}.")
     gerar_ranking()  # Atualiza ranking automaticamente
 
+#F FUNCIONALIDADE DE FORMAÇÃO DE TIMES
+def formar_times(evento_id: int) -> None:
+    """
+    Forma times automaticamente para um evento com base nas jogadoras inscritas.
+    Cada time terá o número máximo de jogadoras definido em 'jogadoras_por_time'.
+    Os times são distribuídos de forma sequencial e salvos em eventos.json e times.json.
+    """
+    evento = next((e for e in eventos if e["id"] == evento_id), None)
+    if not evento:
+        print("Evento não encontrado.")
+        return
+
+    inscritas = evento.get("inscritos", [])
+    if not inscritas:
+        print("Nenhuma jogadora inscrita para formar times.")
+        return
+
+    max_por_time = evento.get("jogadoras_por_time", 5)
+    total_jogadoras = len(inscritas)
+    num_times = (total_jogadoras + max_por_time - 1) // max_por_time  # arredonda pra cima
+
+    print(f"\nFormando {num_times} time(s) com até {max_por_time} jogadoras cada...")
+
+    evento["times"] = []
+    times_criados = []
+
+    for i in range(num_times):
+        inicio = i * max_por_time
+        fim = inicio + max_por_time
+        jogadoras_time = inscritas[inicio:fim]
+
+        time = {
+            "id": _novo_id("time"),
+            "nome": f"Time {i + 1}",
+            "jogadoras": jogadoras_time,
+            "evento_id": evento["id"],
+            "evento_nome": evento["nome"]
+        }
+
+        evento["times"].append(time)
+        times_criados.append(time)
+
+    salvar_dados(ARQ_EVENTOS, eventos)
+    salvar_dados(ARQ_TIMES, times_criados)
+
+    print(f"{len(times_criados)} time(s) formados com sucesso para o evento '{evento['nome']}'!")
+
+
 # ============================================================
 # NOVA FUNCIONALIDADE: RANKING
 # ============================================================
@@ -210,7 +258,7 @@ def gerar_ranking() -> None:
                 })
 
         salvar_dados(ARQ_RANKING, ranking)
-        print("🏆 Ranking atualizado com sucesso!")
+        print("Ranking atualizado com sucesso!")
 
         # Enviar ranking para o Node.js
         try:
@@ -271,6 +319,7 @@ def menu_admin(admin: Dict) -> None:
         print("2. Cadastrar evento")
         print("3. Listar eventos")
         print("4. Gerar ranking")
+        print("5. Formar times") 
         print("0. Logout")
         opc = input_int("Escolha: ")
         if opc == 1:
@@ -281,6 +330,12 @@ def menu_admin(admin: Dict) -> None:
             listar_eventos()
         elif opc == 4:
             gerar_ranking()
+        elif opc == 5:
+            listar_eventos()
+            if not eventos:
+                continue
+            evento_id = input_int("ID do evento para formar times: ")
+            formar_times(evento_id)    
         elif opc == 0:
             break
         else:

@@ -22,5 +22,11 @@
         "email": "thais@gmail.com",
         "senha": "1234",
         "perfil": "jogadora"
+    },
+    {
+        "nome": "Ana Silva",
+        "email": "anasilva@gmail.com",
+        "senha": "1234",
+        "perfil": "jogadora"
     }
 ]

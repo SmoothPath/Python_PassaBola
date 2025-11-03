@@ -10,7 +10,20 @@
             "yasmin@gmail.com",
             "thais@gmail.com"
         ],
-        "times": [],
+        "times": [
+            {
+                "id": 1,
+                "nome": "Time 1",
+                "jogadoras": [
+                    "julia@gmail.com",
+                    "geo@gmail.com",
+                    "yasmin@gmail.com",
+                    "thais@gmail.com"
+                ],
+                "evento_id": 1,
+                "evento_nome": "Campeonato Passa a Bola"
+            }
+        ],
         "jogadoras_por_time": 5
     },
     {
