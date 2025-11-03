@@ -38,17 +38,5 @@
         ],
         "times": [],
         "jogadoras_por_time": 5
-    },
-    {
-        "id": 3,
-        "nome": "Encontro Semanal 3",
-        "local": "Rua dos esportes",
-        "data": "15/05/2026",
-        "inscritos": [
-            "geo@gmail.com",
-            "julia@gmail.com"
-        ],
-        "times": [],
-        "jogadoras_por_time": 5
     }
 ]

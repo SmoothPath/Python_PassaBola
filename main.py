@@ -110,6 +110,67 @@ def cadastrar_usuario() -> None:
     salvar_dados(ARQ_USUARIOS, usuarios)
     print("Usuário cadastrado com sucesso!")
 
+def listar_usuarios() -> None:
+    """Exibe todos os usuários cadastrados (somente para administrador)."""
+    global usuarios
+
+    if not usuarios:
+        print("\nNenhum usuário cadastrado.")
+        return
+
+    print("\n=== Lista de Usuários ===")
+    for i, u in enumerate(usuarios, 1):
+        print(f"{i}. {u['nome']} | {u['email']} | Perfil: {u['perfil']}")
+    print("-" * 30)
+
+
+def editar_usuario() -> None:
+    """Edita informações de uma jogadora existente."""
+    email = input_str("Email da jogadora a editar: ")
+    usuario = next((u for u in usuarios if u["email"].lower() == email.lower()), None)
+    if not usuario:
+        print("Usuária não encontrada.")
+        return
+
+    print(f"\nEditando {usuario['nome']}:")
+    novo_nome = input_str("Novo nome (Enter para manter): ")
+    nova_senha = input("Nova senha (Enter para manter): ").strip()
+
+    if novo_nome:
+        usuario["nome"] = novo_nome
+    if nova_senha:
+        usuario["senha"] = nova_senha
+
+    salvar_dados(ARQ_USUARIOS, usuarios)
+    print("Usuária atualizada com sucesso!")
+
+
+def excluir_usuario() -> None:
+    """Exclui uma jogadora e remove suas participações."""
+    email = input_str("Email da jogadora a excluir: ")
+    global usuarios, eventos
+
+    usuario = next((u for u in usuarios if u["email"].lower() == email.lower()), None)
+    if not usuario:
+        print("Usuária não encontrada.")
+        return
+
+    confirm = input(f"Tem certeza que deseja excluir {usuario['nome']}? (s/n): ").lower()
+    if confirm != "s":
+        print("Operação cancelada.")
+        return
+
+    # Remover de eventos
+    for e in eventos:
+        if email in e.get("inscritos", []):
+            e["inscritos"].remove(email)
+
+    usuarios = [u for u in usuarios if u["email"].lower() != email.lower()]
+    salvar_dados(ARQ_USUARIOS, usuarios)
+    salvar_dados(ARQ_EVENTOS, eventos)
+    print("Usuária excluída com sucesso.")
+
+
 def login() -> Optional[Dict]:
     """Realiza login de jogadora ou admin."""
     print("\n--- Login ---")
@@ -164,6 +225,59 @@ def cadastrar_evento() -> None:
     })
     salvar_dados(ARQ_EVENTOS, eventos)
     print("Evento cadastrado!")
+
+def editar_evento() -> None:
+    """Edita informações de um evento existente."""
+    listar_eventos()
+    if not eventos:
+        return
+    evento_id = input_int("ID do evento a editar: ")
+    evento = next((e for e in eventos if e["id"] == evento_id), None)
+    if not evento:
+        print("Evento não encontrado.")
+        return
+
+    print(f"\nEditando {evento['nome']}:")
+    novo_nome = input("Novo nome (Enter para manter): ").strip()
+    novo_local = input("Novo local (Enter para manter): ").strip()
+    nova_data = input("Nova data (Enter para manter): ").strip()
+
+    if novo_nome:
+        evento["nome"] = novo_nome
+    if novo_local:
+        evento["local"] = novo_local
+    if nova_data:
+        evento["data"] = nova_data
+
+    salvar_dados(ARQ_EVENTOS, eventos)
+    print("Evento atualizado com sucesso!")
+
+
+def excluir_evento() -> None:
+    """Exclui um evento e remove times associados."""
+    global eventos, times
+    listar_eventos()
+    if not eventos:
+        return
+    evento_id = input_int("ID do evento a excluir: ")
+    
+
+    evento = next((e for e in eventos if e["id"] == evento_id), None)
+    if not evento:
+        print("Evento não encontrado.")
+        return
+
+    confirm = input(f"Tem certeza que deseja excluir '{evento['nome']}'? (s/n): ").lower()
+    if confirm != "s":
+        print("Operação cancelada.")
+        return
+
+    eventos = [e for e in eventos if e["id"] != evento_id]
+    times = [t for t in times if t["evento_id"] != evento_id]
+    salvar_dados(ARQ_EVENTOS, eventos)
+    salvar_dados(ARQ_TIMES, times)
+    print("Evento excluído com sucesso.")
+
 
 def inscrever_em_evento(jogadora: Dict) -> None:
     """Inscreve jogadora em evento."""
@@ -316,26 +430,42 @@ def menu_admin(admin: Dict) -> None:
     while True:
         print("\n--- Menu Admin ---")
         print("1. Cadastrar usuário")
-        print("2. Cadastrar evento")
-        print("3. Listar eventos")
-        print("4. Gerar ranking")
-        print("5. Formar times") 
+        print("2. Listar Usuários")
+        print("3. Cadastrar evento")
+        print("4. Listar eventos")
+        print("5. Gerar ranking")
+        print("6. Formar times")
+        print("7. Editar usuário")
+        print("8. Excluir usuário")
+        print("9. Editar evento")
+        print("10. Excluir evento")
         print("0. Logout")
+
         opc = input_int("Escolha: ")
         if opc == 1:
             cadastrar_usuario()
         elif opc == 2:
-            cadastrar_evento()
+            listar_usuarios()    
         elif opc == 3:
-            listar_eventos()
+            cadastrar_evento()
         elif opc == 4:
-            gerar_ranking()
+            listar_eventos()
         elif opc == 5:
+            gerar_ranking()
+        elif opc == 6:
             listar_eventos()
             if not eventos:
                 continue
             evento_id = input_int("ID do evento para formar times: ")
-            formar_times(evento_id)    
+            formar_times(evento_id)  
+        elif opc == 7:
+            editar_usuario()
+        elif opc == 8:
+            excluir_usuario()
+        elif opc == 9:
+            editar_evento()
+        elif opc == 10:
+            excluir_evento()
         elif opc == 0:
             break
         else:

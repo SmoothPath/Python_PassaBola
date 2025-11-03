@@ -26,7 +26,7 @@ Esse sistema inclui uma **funcionalidade de ranking** que contabiliza a particip
 ---
 
 ### 2. Gerenciamento de Eventos
-- Criação e listagem de eventos esportivos, incluindo nome, local, data e limite padrão de jogadoras por time.  
+- Criação, listagem, atualização e exclusão de eventos esportivos, incluindo nome, local, data e limite padrão de jogadoras por time.  
 - Cada evento possui uma lista de inscritas e times associados.  
 - Armazenamento em `eventos.json`.
 
@@ -43,10 +43,18 @@ Esse sistema inclui uma **funcionalidade de ranking** que contabiliza a particip
 }
 ```
 
-**Ações disponíveis:**
-- `Listar eventos` – Exibe todos os eventos cadastrados com número de inscritas.  
-- `Cadastrar evento` – Permite ao administrador criar novos eventos.  
-- `Inscrever-se em evento` – Permite que a jogadora se inscreva em um evento e atualiza automaticamente o ranking.
+**Inserção, Consulta e Atualização e Exclusão**
+O sistema oferece um CRUD completo para **usuárias** e **eventos**:
+
+- **Editar Usuária:** altera nome ou senha mantendo o mesmo e-mail.  
+- **Excluir Usuária:** remove completamente a jogadora e suas inscrições.  
+- **Editar Evento:** permite atualizar nome, local ou data.  
+- **Excluir Evento:** apaga o evento e os times associados.  
+- **Listar eventos** – Exibe todos os eventos cadastrados com número de inscritas.  
+- **Cadastrar evento** – Permite ao administrador criar novos eventos.  
+- **Inscrever-se em evento** – Permite que a jogadora se inscreva em um evento e atualiza automaticamente o ranking.
+
+Essas ações estão disponíveis apenas para administradores no menu principal.
 
 ---
 
